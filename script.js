@@ -1,28 +1,26 @@
-const form = document.getElementById("contactForm");
-const successMessage = document.getElementById("successMessage");
+document.getElementById("contactForm").addEventListener("submit", async function (e) {
+    e.preventDefault(); // stop form from submitting the traditional way
 
-form.addEventListener("submit", async (e) => {
-  e.preventDefault();                // prevent normal form POST
-  successMessage.classList.add("hidden");
-  
-  const formData = new FormData(form);
+    const name = document.getElementById("name").value;
+    const email = document.getElementById("email").value;
+    const message = document.getElementById("message").value;
 
-  try {
-    const res = await fetch(
-      "https://security-test-one.vercel.app/api/submit",
-      {
-        method: "POST",
-        body: formData
-      }
-    );
+    try {
+        const response = await fetch("https://security-test-one.vercel.app/api/submit", {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json"
+            },
+            body: JSON.stringify({ name, email, message })
+        });
 
-    if (!res.ok) throw new Error("Network response was not OK");
-
-    // on success…
-    form.reset();                     // clear the form
-    successMessage.classList.remove("hidden");
-  } catch (err) {
-    console.error("Form submit error:", err);
-    alert("There was a problem submitting your message. Please try again.");
-  }
+        if (response.ok) {
+            document.getElementById("successMessage").classList.remove("hidden");
+            document.getElementById("contactForm").reset();
+        } else {
+            alert("There was an error submitting the form.");
+        }
+    } catch (error) {
+        alert("Network error: " + error.message);
+    }
 });
