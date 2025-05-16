@@ -1,23 +1,38 @@
+// This file handles form submissions securely using environment variables
 export default async function handler(req, res) {
-  if (req.method !== "POST") {
-    return res.status(405).send("Method Not Allowed");
+  // Only allow POST requests
+  if (req.method !== 'POST') {
+    return res.status(405).json({ error: 'Method not allowed' });
   }
 
-  const formEndpoint = process.env.FORM_URL;
-
   try {
-    const response = await fetch(formEndpoint, {
-      method: "POST",
-      body: req.body,
+    // Get the Formspree URL from environment variables
+    const formUrl = process.env.FORM_URL;
+    
+    if (!formUrl) {
+      return res.status(500).json({ error: 'Form URL is not configured' });
+    }
+
+    // Forward the request to Formspree
+    const response = await fetch(formUrl, {
+      method: 'POST',
       headers: {
-        "Content-Type": req.headers["content-type"]
-      }
+        'Content-Type': 'application/json',
+        'Accept': 'application/json'
+      },
+      body: JSON.stringify(req.body)
     });
 
-    const text = await response.text();
+    const data = await response.json();
 
-    res.status(200).send("Submitted successfully");
-  } catch (err) {
-    res.status(500).send("Something went wrong");
+    if (!response.ok) {
+      throw new Error(data.error || 'Failed to submit form');
+    }
+
+    // Return success response to client
+    return res.status(200).json({ success: true });
+  } catch (error) {
+    console.error('Form submission error:', error);
+    return res.status(500).json({ error: 'Failed to submit form' });
   }
 }
